@@ -3,22 +3,43 @@
   (:import (org.apache.commons.pool2 PooledObjectFactory)
            (org.apache.commons.pool2.impl DefaultPooledObject GenericObjectPool GenericObjectPoolConfig)))
 
-(t/deftest default-method-gets-invoked
+(defn ->proxied-factory [destroyed*]
+  (proxy [PooledObjectFactory] []
+    (makeObject []
+      (DefaultPooledObject. (constantly nil)))
+    (destroyObject [_]
+      (reset! destroyed* true))
+    (activateObject [_])))
+
+(defn ->reified-factory [destroyed*]
+  (reify PooledObjectFactory
+    (makeObject [_]
+      (DefaultPooledObject. (constantly nil)))
+    (destroyObject [_ _]
+      (reset! destroyed* true))
+    (validateObject [_ _])
+    (activateObject [_ _])
+    (passivateObject [_ _])))
+
+(defn object-gets-destroyed? [->factory]
   (let [destroyed* (atom false)
-        pool       (GenericObjectPool.
-                    (proxy [PooledObjectFactory] []
-                      (makeObject []
-                        (DefaultPooledObject. (constantly nil)))
-                      (destroyObject [_]
-                        (reset! destroyed* true))
-                      (activateObject [_]))
-                    (GenericObjectPoolConfig.))]
+        pool       (GenericObjectPool. (->factory destroyed*) (GenericObjectPoolConfig.))]
     (.returnObject pool (.borrowObject pool))
     (.close pool)
+    @destroyed*))
+
+(t/deftest default-method-gets-invoked
+  (t/testing "proxied interface"
 
     ;; fails when run with 2.9.0 as the 2-arg arity of destroyObject gets called:
     ;; https://github.com/apache/commons-pool/blob/rel/commons-pool-2.9.0/src/main/java/org/apache/commons/pool2/impl/GenericObjectPool.java#L677
     ;; but that should delegate to the 1-arg arity by default:
     ;; https://github.com/apache/commons-pool/blob/rel/commons-pool-2.9.0/src/main/java/org/apache/commons/pool2/PooledObjectFactory.java#L125
 
-    (t/is (true? @destroyed*))))
+    (t/is (true? (object-gets-destroyed? ->proxied-factory))))
+
+  (t/testing "reified interface"
+
+    ;; Passes with both 2.8.1 and 2.9.0
+
+    (t/is (true? (object-gets-destroyed? ->reified-factory)))))
