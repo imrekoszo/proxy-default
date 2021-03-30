@@ -1,14 +1,19 @@
-{:deps
+{:paths
+ []
+
+ :deps
  {org.clojure/clojure {:mvn/version "1.10.3"}}
 
  :aliases
- {:pool-2-8-1
-  {:extra-deps {org.apache.commons/commons-pool2
-                {:mvn/version "2.8.1"}}}
+ {:oldversion
+  {:extra-paths ["classes/oldversion"]
+   :extra-deps  {org.apache.commons/commons-pool2
+                 {:mvn/version "2.8.1"}}}
 
-  :pool-2-9-0
-  {:extra-deps {org.apache.commons/commons-pool2
-                {:mvn/version "2.9.0"}}}
+  :newversion
+  {:extra-paths ["classes/newversion"]
+   :extra-deps  {org.apache.commons/commons-pool2
+                 {:mvn/version "2.9.0"}}}
 
   :test
   {:extra-paths ["test"]

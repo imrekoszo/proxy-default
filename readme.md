@@ -2,14 +2,20 @@
 
 This repo is to demonstrate an issue I recently had with `proxy` and an interface that recently got a method override with an additional argument, calling the single-arg method by default.
 
+Preparation:
+
+```shell
+javac src/java/oldversion/*.java -d classes/oldversion && javac src/java/newversion/*.java -d classes/newversion
+```
+
 Passes:
 
 ```shell
-clojure -M:pool-2-8-1:test
+clojure -Srepro -M:oldversion:test
 ```
 
 Fails:
 
 ```shell
-clojure -M:pool-2-9-0:test
+clojure -Srepro -M:newversion:test
 ```
